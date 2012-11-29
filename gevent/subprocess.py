@@ -2,12 +2,11 @@ from __future__ import absolute_import
 import sys
 import os
 import errno
-import types
 import gc
 import signal
 import traceback
 from gevent.event import AsyncResult
-from gevent.hub import get_hub, linkproxy
+from gevent.hub import get_hub, linkproxy, string_types, integer_types, b
 from gevent.fileobject import FileObject
 from gevent.greenlet import Greenlet, joinall
 spawn = Greenlet.spawn
@@ -134,6 +133,13 @@ def check_call(*popenargs, **kwargs):
     return 0
 
 
+def _to_str(data):
+    """For doctest"""
+    if not isinstance(data, str):
+        data = data.decode()
+    return data
+
+
 def check_output(*popenargs, **kwargs):
     r"""Run command with arguments and return its output as a byte string.
 
@@ -143,13 +149,13 @@ def check_output(*popenargs, **kwargs):
 
     The arguments are the same as for the Popen constructor.  Example:
 
-    >>> check_output(["ls", "-1", "/dev/null"])
+    >>> _to_str(check_output(["ls", "-1", "/dev/null"]))
     '/dev/null\n'
 
     The stdout argument is not allowed as it is used internally.
     To capture standard error in the result, use stderr=STDOUT.
 
-    >>> check_output(["/bin/sh", "-c", "echo hello world"], stderr=STDOUT)
+    >>> _to_str(check_output(["/bin/sh", "-c", "echo hello world"], stderr=STDOUT))
     'hello world\n'
     """
     if 'stdout' in kwargs:
@@ -173,7 +179,7 @@ class Popen(object):
                  cwd=None, env=None, universal_newlines=False,
                  startupinfo=None, creationflags=0, threadpool=None):
         """Create new Popen instance."""
-        if not isinstance(bufsize, (int, long)):
+        if not isinstance(bufsize, integer_types):
             raise TypeError("bufsize must be an integer")
         hub = get_hub()
 
@@ -398,7 +404,7 @@ class Popen(object):
                            errread, errwrite):
             """Execute program (MS Windows version)"""
 
-            if not isinstance(args, types.StringTypes):
+            if not isinstance(args, string_types):
                 args = list2cmdline(args)
 
             # Process startup details
@@ -440,7 +446,8 @@ class Popen(object):
                                                  env,
                                                  cwd,
                                                  startupinfo)
-            except pywintypes.error, e:
+            except pywintypes.error:
+                e = sys.exc_info()[1]
                 # Translate pywintypes.error to WindowsError, which is
                 # a subclass of OSError.  FIXME: We should really
                 # translate errno using _sys_errlist (or similar), but
@@ -614,7 +621,7 @@ class Popen(object):
                            errread, errwrite):
             """Execute program (POSIX version)"""
 
-            if isinstance(args, types.StringTypes):
+            if isinstance(args, string_types):
                 args = [args]
             else:
                 args = list(args)
@@ -743,7 +750,7 @@ class Popen(object):
                 else:
                     os.close(errpipe_read)
 
-            if data != "":
+            if data != b(""):
                 self.wait()
                 child_exception = pickle.loads(data)
                 for fd in (p2cwrite, c2pread, errread):
@@ -791,7 +798,8 @@ def write_and_close(fobj, data):
     try:
         if data:
             fobj.write(data)
-    except (OSError, IOError), ex:
+    except (OSError, IOError):
+        ex = sys.exc_info()[1]
         if ex.errno != errno.EPIPE and ex.errno != errno.EINVAL:
             raise
     finally:

@@ -1,12 +1,15 @@
 import greentest
 import gevent
+import six
 from gevent import socket
 from gevent import backdoor
+if six.PY3:
+    xrange = range
 
 
 def read_until(conn, postfix):
-    read = ''
-    while not read.endswith(postfix):
+    read = six.b('')
+    while not read.endswith(six.b(postfix)):
         result = conn.recv(1)
         if not result:
             raise AssertionError('Connection ended before %r. Data read:\n%r' % (postfix, read))

@@ -5,7 +5,9 @@ import _socket
 import errno
 from gevent.greenlet import Greenlet, getfuncname
 from gevent.event import Event
-from gevent.hub import string_types, integer_types, get_hub
+from gevent.hub import string_types, integer_types, get_hub, PY3
+if PY3:
+    xrange = range
 
 
 __all__ = ['BaseServer']
@@ -86,7 +88,7 @@ class BaseServer(object):
         elif hasattr(spawn, 'spawn'):
             self.pool = spawn
             self._spawn = spawn.spawn
-        elif isinstance(spawn, (int, long)):
+        elif isinstance(spawn, integer_types):
             from gevent.pool import Pool
             self.pool = Pool(spawn)
             self._spawn = self.pool.spawn

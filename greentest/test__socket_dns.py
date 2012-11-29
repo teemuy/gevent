@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 from __future__ import with_statement
+import six
 import sys
 import re
 import greentest
@@ -9,6 +10,8 @@ from time import time
 import gevent
 import gevent.socket as gevent_socket
 from util import log
+if six.PY3:
+    xrange = range
 
 
 resolver = gevent.get_hub().resolver
@@ -113,7 +116,7 @@ def relaxed_is_equal(a, b):
     """
     if type(a) is not type(b):
         return False
-    if isinstance(a, basestring):
+    if isinstance(a, six.string_types):
         return compare_ipv6(a, b)
     if hasattr(a, '__iter__'):
         if len(a) != len(b):
@@ -298,8 +301,9 @@ class TestFamily(TestCase):
         try:
             result = function(*args)
             raise AssertionError('%s: Expected to raise %s, instead returned %r' % (function, error, result))
-        except Exception, ex:
-            if isinstance(error, basestring):
+        except Exception:
+            ex = sys.exc_info()[1]
+            if isinstance(error, six.string_types):
                 repr_error = error
             else:
                 repr_error = repr(error)

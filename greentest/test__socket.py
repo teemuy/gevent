@@ -2,6 +2,7 @@ from gevent import monkey; monkey.patch_all()
 import sys
 import os
 import array
+import six
 import socket
 import traceback
 import time
@@ -38,7 +39,7 @@ class TestTCP(greentest.TestCase):
 
     __timeout__ = None
     TIMEOUT_ERROR = socket.timeout
-    long_data = ", ".join([str(x) for x in range(20000)])
+    long_data = six.b(", ".join([str(x) for x in range(20000)]))
 
     def setUp(self):
         greentest.TestCase.setUp(self)
@@ -77,7 +78,7 @@ class TestTCP(greentest.TestCase):
         self._test_sendall(self.long_data)
 
     def test_sendall_unicode(self):
-        self._test_sendall(unicode(self.long_data))
+        self._test_sendall(self.long_data.decode())
 
     def test_sendall_array(self):
         data = array.array("B", self.long_data)

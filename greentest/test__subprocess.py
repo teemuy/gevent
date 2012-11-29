@@ -28,7 +28,8 @@ class Test(greentest.TestCase):
     def test_child_exception(self):
         try:
             subprocess.Popen(['*']).wait()
-        except OSError, ex:
+        except OSError:
+            ex = sys.exc_info()[1]
             assert ex.errno == 2, ex
         else:
             raise AssertionError('Expected OSError: [Errno 2] No such file or directory')

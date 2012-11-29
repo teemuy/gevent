@@ -8,6 +8,11 @@ from _socket import gaierror
 __all__ = ['channel']
 
 
+if sys.version_info[0] >= 3:
+    string_types = str,
+else:
+    string_types = __builtins__.basestring,
+
 TIMEOUT = 1
 
 DEF EV_READ = 1
@@ -306,7 +311,7 @@ cdef public class channel [object PyGeventAresChannelObject, type PyGeventAresCh
             raise gaierror(cares.ARES_EDESTRUCTION, 'this ares channel has been destroyed')
         if not servers:
             servers = []
-        if isinstance(servers, basestring):
+        if isinstance(servers, string_types):
             servers = servers.split(',')
         cdef int length = len(servers)
         cdef int result, index
