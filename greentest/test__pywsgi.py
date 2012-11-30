@@ -408,8 +408,8 @@ class MultiLineHeader(TestCase):
         request = '\r\n'.join((
             'POST / HTTP/1.0',
             'Host: localhost',
-            'Content-Type: multipart/related; boundary="====XXXX====";',
-            ' type="text/xml";start="test.submit"',
+            'Content-Type: text/xml;',
+            ' start="test.submit"',
             'Content-Length: 0',
             '', ''))
         fd = self.makefile()

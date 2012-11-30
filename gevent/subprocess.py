@@ -251,11 +251,11 @@ class Popen(object):
         if p2cwrite is not None:
             self.stdin = FileObject(p2cwrite, 'wb')
         if c2pread is not None:
-            self.stdout = FileObject(c2pread, ('r' if PY3 else 'rU')
-                                                if universal_newlines else 'rb')
+            self.stdout = FileObject(
+                c2pread, ('r' if PY3 else 'rU') if universal_newlines else 'rb')
         if errread is not None:
-            self.stderr = FileObject(errread, ('r' if PY3 else 'rU')
-                                                if universal_newlines else 'rb')
+            self.stderr = FileObject(
+                errread, ('r' if PY3 else 'rU') if universal_newlines else 'rb')
 
     def __repr__(self):
         return '<%s at 0x%x pid=%r returncode=%r>' % (self.__class__.__name__, id(self), self.pid, self.returncode)
