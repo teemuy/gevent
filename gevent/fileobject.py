@@ -59,7 +59,7 @@ else:
             self._fileno = fileno
             self._mode = mode or 'rb'
             self._close = close
-            self._translate = 'U' in self._mode
+            self._translate = not PY3 and 'U' in self._mode
             make_nonblocking(fileno)
             self._eat_newline = False
             self.hub = get_hub()
@@ -113,7 +113,7 @@ else:
                 if self._close:
                     os.close(fileno)
 
-        def sendall(self, data):
+        def send(self, data):
             fileno = self.fileno()
             bytes_total = len(data)
             bytes_written = 0
@@ -127,11 +127,11 @@ else:
                     if not PY3:
                         sys.exc_clear()
                 if bytes_written >= bytes_total:
-                    return
+                    return bytes_written
                 self.hub.wait(self._write_event)
 
-        def send(self, buffer):
-            self.sendall(buffer)
+        def sendall(self, data):
+            self.send(data)
 
         def recv(self, size):
             while True:
@@ -212,6 +212,8 @@ else:
             try:
                 self.flush()
             finally:
+                if PY3:
+                    _fileobject.close(self)
                 if self._fobj is not None or not self._close:
                     sock.detach()
                 self._sock = None

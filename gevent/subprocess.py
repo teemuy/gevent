@@ -6,7 +6,7 @@ import gc
 import signal
 import traceback
 from gevent.event import AsyncResult
-from gevent.hub import get_hub, linkproxy, string_types, integer_types, b
+from gevent.hub import get_hub, linkproxy, string_types, integer_types, b, PY3
 from gevent.fileobject import FileObject
 from gevent.greenlet import Greenlet, joinall
 spawn = Greenlet.spawn
@@ -251,15 +251,11 @@ class Popen(object):
         if p2cwrite is not None:
             self.stdin = FileObject(p2cwrite, 'wb')
         if c2pread is not None:
-            if universal_newlines:
-                self.stdout = FileObject(c2pread, 'rU')
-            else:
-                self.stdout = FileObject(c2pread, 'rb')
+            self.stdout = FileObject(c2pread, ('r' if PY3 else 'rU')
+                                                if universal_newlines else 'rb')
         if errread is not None:
-            if universal_newlines:
-                self.stderr = FileObject(errread, 'rU')
-            else:
-                self.stderr = FileObject(errread, 'rb')
+            self.stderr = FileObject(errread, ('r' if PY3 else 'rU')
+                                                if universal_newlines else 'rb')
 
     def __repr__(self):
         return '<%s at 0x%x pid=%r returncode=%r>' % (self.__class__.__name__, id(self), self.pid, self.returncode)
