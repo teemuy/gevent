@@ -49,11 +49,15 @@ class SocketConsole(Greenlet):
     def __init__(self, locals, conn, banner=None):
         Greenlet.__init__(self)
         self.locals = locals
-        self.desc = _fileobject(conn)
+        self.desc = _fileobject(conn, mode='rw', close=True)
         self.banner = banner
 
     def finalize(self):
-        self.desc = None
+        try:
+            if PY3:
+                self.desc.close()
+        finally:
+            self.desc = None
 
     def switch(self, *args, **kw):
         self.saved = sys.stdin, sys.stderr, sys.stdout

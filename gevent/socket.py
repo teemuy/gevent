@@ -130,9 +130,18 @@ except AttributeError:
         def closed(self):
             return self._obj.closed
 
+        def __del__(self):
+            try:
+                self.close()
+            except:
+                pass
+
         def close(self):
             try:
-                self._obj.close()
+                if self._obj is not None:
+                    self._obj.close()
+                if self._sock is not None and self._close:
+                    self._sock.close()
             finally:
                 self._sock = self._obj = None
 
@@ -372,7 +381,11 @@ class socket(object):
         # This function should not reference any globals. See Python issue #808164.
         self.hub.cancel_wait(self._read_event, cancel_wait_ex)
         self.hub.cancel_wait(self._write_event, cancel_wait_ex)
-        self._sock = _closedsocket()
+        try:
+            if PY3:
+                self._sock.close()
+        finally:
+            self._sock = _closedsocket()
 
     @property
     def closed(self):
@@ -433,10 +446,7 @@ class socket(object):
         #    socket (hence creating a new instance)
         # 2) The resulting fileobject must keep the timeout in order
         #    to be compatible with the stdlib's socket.makefile.
-        ret = _fileobject(type(self)(_sock=self), mode, bufsize)
-        if PY3:
-            self._io_refs += 1
-        return ret
+        return _fileobject(type(self)(_sock=self), mode, bufsize)
 
     def recv(self, *args):
         sock = self._sock  # keeping the reference so that fd is not closed during waiting
