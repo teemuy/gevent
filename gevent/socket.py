@@ -446,7 +446,11 @@ class socket(object):
         #    socket (hence creating a new instance)
         # 2) The resulting fileobject must keep the timeout in order
         #    to be compatible with the stdlib's socket.makefile.
-        return _fileobject(type(self)(_sock=self), mode, bufsize)
+        if PY3:
+            sock = self
+        else:
+            sock = type(self)(_sock=self)
+        return _fileobject(sock, mode, bufsize)
 
     def recv(self, *args):
         sock = self._sock  # keeping the reference so that fd is not closed during waiting

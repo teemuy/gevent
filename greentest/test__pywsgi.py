@@ -212,10 +212,7 @@ class DebugFileObject(object):
 
 
 def makefile(self, mode='rwb', bufsize=-1):
-    ret = DebugFileObject(socket._fileobject(self.dup(), mode, bufsize))
-    if six.PY3:
-        self._io_refs += 1
-    return ret
+    return DebugFileObject(socket._fileobject(self.dup(), mode, bufsize))
 
 socket.socket.makefile = makefile
 

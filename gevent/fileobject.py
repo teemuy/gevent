@@ -83,10 +83,7 @@ else:
                 self.close()
 
         def makefile(self, *args, **kwargs):
-            ret = _fileobject(self, *args, **kwargs)
-            if PY3:
-                self._io_refs += 1
-            return ret
+            return _fileobject(self, *args, **kwargs)
 
         def fileno(self):
             result = self._fileno
