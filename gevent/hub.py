@@ -195,9 +195,10 @@ def get_hub(*args, **kwargs):
     try:
         return _threadlocal.hub
     except AttributeError:
-        hubtype = get_hub_class()
-        hub = _threadlocal.hub = hubtype(*args, **kwargs)
-        return hub
+        pass
+    hubtype = get_hub_class()
+    hub = _threadlocal.hub = hubtype(*args, **kwargs)
+    return hub
 
 
 def _get_hub():

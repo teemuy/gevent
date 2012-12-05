@@ -27,7 +27,10 @@ class SimpleStreamServer(StreamServer):
         elif path in ['/long', '/short']:
             client_socket.sendall('hello')
             while True:
-                data = client_socket.recv(1)
+                try:
+                    data = client_socket.recv(1)
+                except ConnectionResetError:
+                    data = None
                 if not data:
                     break
         else:
@@ -132,9 +135,13 @@ class TestCase(greentest.TestCase):
 
     def assertRequestSucceeded(self, timeout=0.1):
         conn = self.makefile(timeout=timeout)
-        conn.write(b('GET /ping HTTP/1.0\r\n\r\n'))
-        result = conn.read()
-        assert result.endswith(b('\r\n\r\nPONG')), repr(result)
+        try:
+            conn.write(b('GET /ping HTTP/1.0\r\n\r\n'))
+            result = conn.read()
+            assert result.endswith(b('\r\n\r\nPONG')), repr(result)
+        finally:
+            conn._sock.close()
+            conn = None
 
     def start_server(self):
         self.server.start()
@@ -288,7 +295,12 @@ class TestDefaultSpawn(TestCase):
         self.init_server()
         assert self.server.started
         error = ExpectedError('test_error_in_spawn')
-        self.server._spawn = lambda *args: gevent.getcurrent().throw(error)
+        def error_spawn(*args):
+            try:
+                gevent.getcurrent().throw(error)
+            finally:
+                args = None
+        self.server._spawn = error_spawn
         self.expect_one_error()
         self.assertAcceptedConnectionError()
         self.assert_error(ExpectedError, error)
@@ -322,6 +334,7 @@ class TestPoolSpawn(TestDefaultSpawn):
         self.assertPoolFull()
         self.assertPoolFull()
         short_request._sock.close()
+        short_request = None
         # gevent.http and gevent.wsgi cannot detect socket close, so sleep a little
         # to let /short request finish
         gevent.sleep(0.1)
@@ -340,7 +353,10 @@ class TestNoneSpawn(TestCase):
 
     def test_assertion_in_blocking_func(self):
         def sleep(*args):
-            gevent.sleep(0)
+            try:
+                gevent.sleep(0)
+            finally:
+                args = None
         self.server = Settings.ServerClass(('127.0.0.1', 0), sleep, spawn=None)
         self.server.start()
         self.expect_one_error()

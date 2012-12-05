@@ -128,10 +128,13 @@ class BaseServer(object):
 
     def do_handle(self, *args):
         spawn = self._spawn
-        if spawn is None:
-            self._handle(*args)
-        else:
-            spawn(self._handle, *args)
+        try:
+            if spawn is None:
+                self._handle(*args)
+            else:
+                spawn(self._handle, *args)
+        finally:
+            args = None
 
     def _do_read(self):
         for _ in xrange(self.max_accept):
@@ -167,6 +170,8 @@ class BaseServer(object):
                         self._timer.start(self._start_accepting_if_started)
                         self.delay = min(self.max_delay, self.delay * 2)
                     break
+                finally:
+                    args = None
 
     def full(self):
         return False

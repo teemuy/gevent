@@ -52,7 +52,10 @@ if fcntl:
                 e = sys.exc_info()[1]
                 if e.errno not in ignored_errors:
                     raise
-                if not PY3:
+                if PY3:
+                    e = None
+                    del e
+                else:
                     sys.exc_clear()
             if hub is None:
                 hub = get_hub()
@@ -73,7 +76,10 @@ if fcntl:
                 e = sys.exc_info()[1]
                 if e.errno not in ignored_errors:
                     raise
-                if not PY3:
+                if PY3:
+                    e = None
+                    del e
+                else:
                     sys.exc_clear()
             if hub is None:
                 hub = get_hub()

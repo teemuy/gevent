@@ -175,7 +175,10 @@ for name in __socket__.__all__:
 del name, value
 
 
-def wait(io, timeout=None, timeout_exc=timeout('timed out')):
+timeout_exc_default = object()
+timeout_class = timeout
+
+def wait(io, timeout=None, timeout_exc=timeout_exc_default):
     """Block the current greenlet until *io* is ready.
 
     If *timeout* is non-negative, then *timeout_exc* is raised after *timeout* second has passed.
@@ -185,16 +188,21 @@ def wait(io, timeout=None, timeout_exc=timeout('timed out')):
     """
     assert io.callback is None, 'This socket is already used by another greenlet: %r' % (io.callback, )
     if timeout is not None:
-        timeout = Timeout.start_new(timeout, timeout_exc)
+        if timeout_exc is timeout_exc_default:
+            timeout_exc = timeout_class('timed out')
+        _timeout = Timeout.start_new(timeout, timeout_exc)
+    else:
+        _timeout = None
     try:
         return get_hub().wait(io)
     finally:
-        if timeout is not None:
-            timeout.cancel()
+        if _timeout is not None:
+            _timeout.cancel()
+        _timeout = timeout_exc = None
     # rename "io" to "watcher" because wait() works with any watcher
 
 
-def wait_read(fileno, timeout=None, timeout_exc=timeout('timed out')):
+def wait_read(fileno, timeout=None, timeout_exc=timeout_exc_default):
     """Block the current greenlet until *fileno* is ready to read.
 
     If *timeout* is non-negative, then *timeout_exc* is raised after *timeout* second has passed.
@@ -206,7 +214,7 @@ def wait_read(fileno, timeout=None, timeout_exc=timeout('timed out')):
     return wait(io, timeout, timeout_exc)
 
 
-def wait_write(fileno, timeout=None, timeout_exc=timeout('timed out'), event=None):
+def wait_write(fileno, timeout=None, timeout_exc=timeout_exc_default, event=None):
     """Block the current greenlet until *fileno* is ready to write.
 
     If *timeout* is non-negative, then *timeout_exc* is raised after *timeout* second has passed.
@@ -218,7 +226,7 @@ def wait_write(fileno, timeout=None, timeout_exc=timeout('timed out'), event=Non
     return wait(io, timeout, timeout_exc)
 
 
-def wait_readwrite(fileno, timeout=None, timeout_exc=timeout('timed out'), event=None):
+def wait_readwrite(fileno, timeout=None, timeout_exc=timeout_exc_default, event=None):
     """Block the current greenlet until *fileno* is ready to read or write.
 
     If *timeout* is non-negative, then *timeout_exc* is raised after *timeout* second has passed.
@@ -332,7 +340,7 @@ class socket(object):
 
     ref = property(_get_ref, _set_ref)
 
-    def _wait(self, watcher, timeout_exc=timeout('timed out')):
+    def _wait(self, watcher, timeout_exc=timeout_exc_default):
         """Block the current greenlet until *watcher* has pending events.
 
         If *timeout* is non-negative, then *timeout_exc* is raised after *timeout* second has passed.
@@ -342,6 +350,8 @@ class socket(object):
         """
         assert watcher.callback is None, 'This socket is already used by another greenlet: %r' % (watcher.callback, )
         if self.timeout is not None:
+            if timeout_exc is timeout_exc_default:
+                timeout_exc = timeout_class('timed out')
             timeout = Timeout.start_new(self.timeout, timeout_exc, ref=False)
         else:
             timeout = None
@@ -350,6 +360,7 @@ class socket(object):
         finally:
             if timeout is not None:
                 timeout.cancel()
+            timeout = timeout_exc = None
 
     def accept(self):
         sock = self._sock
@@ -364,7 +375,10 @@ class socket(object):
                 ex = sys.exc_info()[1]
                 if ex.args[0] != EWOULDBLOCK or self.timeout == 0.0:
                     raise
-                if not PY3:
+                if PY3:
+                    ex = None
+                    del ex
+                else:
                     sys.exc_clear()
             self._wait(self._read_event)
         if PY3:
@@ -462,7 +476,10 @@ class socket(object):
                 if ex.args[0] != EWOULDBLOCK or self.timeout == 0.0:
                     raise
                 # QQQ without clearing exc_info test__refcount.test_clean_exit fails
-                if not PY3:
+                if PY3:
+                    ex = None
+                    del ex
+                else:
                     sys.exc_clear()
             self._wait(self._read_event)
 
@@ -475,7 +492,10 @@ class socket(object):
                 ex = sys.exc_info()[1]
                 if ex.args[0] != EWOULDBLOCK or self.timeout == 0.0:
                     raise
-                if not PY3:
+                if PY3:
+                    ex = None
+                    del ex
+                else:
                     sys.exc_clear()
             self._wait(self._read_event)
 
@@ -488,7 +508,10 @@ class socket(object):
                 ex = sys.exc_info()[1]
                 if ex.args[0] != EWOULDBLOCK or self.timeout == 0.0:
                     raise
-                if not PY3:
+                if PY3:
+                    ex = None
+                    del ex
+                else:
                     sys.exc_clear()
             self._wait(self._read_event)
 
@@ -501,7 +524,10 @@ class socket(object):
                 ex = sys.exc_info()[1]
                 if ex.args[0] != EWOULDBLOCK or self.timeout == 0.0:
                     raise
-                if not PY3:
+                if PY3:
+                    ex = None
+                    del ex
+                else:
                     sys.exc_clear()
             self._wait(self._read_event)
 
@@ -515,7 +541,10 @@ class socket(object):
             ex = sys.exc_info()[1]
             if ex.args[0] != EWOULDBLOCK or timeout == 0.0:
                 raise
-            if not PY3:
+            if PY3:
+                ex = None
+                del ex
+            else:
                 sys.exc_clear()
             self._wait(self._write_event)
             try:
@@ -555,7 +584,10 @@ class socket(object):
             ex = sys.exc_info()[1]
             if ex.args[0] != EWOULDBLOCK or timeout == 0.0:
                 raise
-            if not PY3:
+            if PY3:
+                ex = None
+                del ex
+            else:
                 sys.exc_clear()
             self._wait(self._write_event)
             try:
