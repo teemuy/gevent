@@ -178,6 +178,7 @@ del name, value
 timeout_exc_default = object()
 timeout_class = timeout
 
+
 def wait(io, timeout=None, timeout_exc=timeout_exc_default):
     """Block the current greenlet until *io* is ready.
 

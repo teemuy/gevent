@@ -10,8 +10,10 @@ __all__ = ['channel']
 
 if sys.version_info[0] >= 3:
     string_types = str,
+    text_type = str
 else:
     string_types = __builtins__.basestring,
+    text_type = __builtins__.unicode
 
 TIMEOUT = 1
 
@@ -326,6 +328,8 @@ cdef public class channel [object PyGeventAresChannelObject, type PyGeventAresCh
             try:
                 index = 0
                 for server in servers:
+                    if isinstance(server, text_type):
+                        server = server.encode('utf-8')
                     string = <char*?>server
                     if cares.ares_inet_pton(AF_INET, string, &c_servers[index].addr) > 0:
                         c_servers[index].family = AF_INET

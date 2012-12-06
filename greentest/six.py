@@ -50,6 +50,10 @@ else:
             locs = globs
         exec("""exec code in globs, locs""")
 
+    exec_("""def reraise(tp, value, tb=None):
+    raise tp, value, tb
+""")
+
     def print_(*args, **kwargs):
         """The new-style print function."""
         fp = kwargs.pop("file", sys.stdout)

@@ -35,6 +35,7 @@ class Test(greentest.TestCase):
         try:
             raise error
         except:
+            _to_reraise = sys.exc_info()
             self.expect_one_error()
             g = gevent.spawn(hello)
             g.join()
@@ -42,7 +43,7 @@ class Test(greentest.TestCase):
             if not isinstance(g.exception, ExpectedError):
                 raise g.exception
             try:
-                raise
+                six.reraise(*_to_reraise)
             except Exception:
                 ex = sys.exc_info()[1]
                 assert ex is error, (ex, error)
