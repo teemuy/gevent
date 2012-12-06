@@ -35,6 +35,7 @@ cdef extern from "dnshelper.c":
     struct ares_channeldata:
         pass
 
+    object parse_h_name(hostent*)
     object parse_h_aliases(hostent*)
     object parse_h_addr_list(hostent*)
     void* create_object_from_hostent(void*)
@@ -206,7 +207,7 @@ cdef void gevent_ares_host_callback(void *arg, int status, int timeouts, hostent
             callback(result(None, gaierror(status, strerror(status))))
         else:
             try:
-                host_result = ares_host_result(host.h_addrtype, (host.h_name, parse_h_aliases(host), parse_h_addr_list(host)))
+                host_result = ares_host_result(host.h_addrtype, (parse_h_name(host), parse_h_aliases(host), parse_h_addr_list(host)))
             except:
                 callback(result(None, sys.exc_info()[1]))
             else:

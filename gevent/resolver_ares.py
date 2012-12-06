@@ -3,7 +3,7 @@ from __future__ import absolute_import
 import os
 import sys
 from _socket import getservbyname, getaddrinfo, gaierror, error
-from gevent.hub import Waiter, get_hub, string_types, text_type, reraise
+from gevent.hub import Waiter, get_hub, string_types, text_type, reraise, PY3, binary_type
 from gevent.socket import AF_UNSPEC, AF_INET, AF_INET6, SOCK_STREAM, SOCK_DGRAM, SOCK_RAW, AI_NUMERICHOST, EAI_SERVICE, AI_PASSIVE
 from gevent.ares import channel, InvalidIP
 
@@ -207,6 +207,8 @@ class Resolver(object):
             if not result:
                 raise
             _ip_address = result[0][-1][0]
+            if isinstance(_ip_address, text_type):
+                _ip_address = _ip_address.encode('ascii')
             if _ip_address == ip_address:
                 raise
             waiter.clear()
@@ -214,6 +216,8 @@ class Resolver(object):
             return waiter.get()
 
     def gethostbyaddr(self, ip_address):
+        if PY3 and isinstance(ip_address, binary_type):
+            ip_address = ip_address.decode('ascii')
         ip_address = _resolve_special(ip_address, AF_UNSPEC)
         while True:
             ares = self.ares

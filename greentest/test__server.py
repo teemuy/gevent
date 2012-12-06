@@ -295,11 +295,13 @@ class TestDefaultSpawn(TestCase):
         self.init_server()
         assert self.server.started
         error = ExpectedError('test_error_in_spawn')
+
         def error_spawn(*args):
             try:
                 gevent.getcurrent().throw(error)
             finally:
                 args = None
+
         self.server._spawn = error_spawn
         self.expect_one_error()
         self.assertAcceptedConnectionError()
