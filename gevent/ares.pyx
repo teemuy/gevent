@@ -41,7 +41,7 @@ cdef extern from "dnshelper.c":
     void* create_object_from_hostent(void*)
 
     # this imports _socket lazily
-    object PyBytes_FromString(char*)
+    object PyUnicode_FromString(char*)
     int PyTuple_Check(object)
     int PyArg_ParseTuple(object, char*, ...) except 0
     struct sockaddr_in6:
@@ -228,11 +228,11 @@ cdef void gevent_ares_nameinfo_callback(void *arg, int status, int timeouts, cha
             callback(result(None, gaierror(status, strerror(status))))
         else:
             if c_node:
-                node = PyBytes_FromString(c_node)
+                node = PyUnicode_FromString(c_node)
             else:
                 node = None
             if c_service:
-                service = PyBytes_FromString(c_service)
+                service = PyUnicode_FromString(c_service)
             else:
                 service = None
             callback(result((node, service)))

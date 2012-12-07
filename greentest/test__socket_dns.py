@@ -168,6 +168,11 @@ def add(klass, hostname, name=None):
 
     def test5(self):
         x = hostname() if call else hostname
+        if six.PY3 and isinstance(x, str) and not x.replace('.', '').isdigit():
+            try:
+                x = socket.gethostbyname(x)
+            except socket.gaierror:
+                pass
         self._test('getnameinfo', (x, 80), 0)
     test5.__name__ = 'test_%s_getnameinfo' % name
     setattr(klass, test5.__name__, test5)
@@ -423,30 +428,37 @@ class Test_getnameinfo_127001(TestCase):
     def test_NAMEREQD(self):
         self._test('getnameinfo', ('127.0.0.1', 80), socket.NI_NAMEREQD)
 
+gevent_org = 'gevent.org'
+www_gevent_org = 'www.gevent.org'
+if six.PY3:
+    # http://bugs.python.org/issue1027206
+    gevent_org = socket.gethostbyname(gevent_org)
+    www_gevent_org = socket.gethostbyname(www_gevent_org)
+
 
 class Test_getnameinfo_geventorg(TestCase):
 
     def test_NUMERICHOST(self):
-        self._test('getnameinfo', ('gevent.org', 80), 0)
-        self._test('getnameinfo', ('gevent.org', 80), socket.NI_NUMERICHOST)
+        self._test('getnameinfo', (gevent_org, 80), 0)
+        self._test('getnameinfo', (gevent_org, 80), socket.NI_NUMERICHOST)
 
     def test_NUMERICSERV(self):
-        self._test('getnameinfo', ('gevent.org', 80), socket.NI_NUMERICSERV)
+        self._test('getnameinfo', (gevent_org, 80), socket.NI_NUMERICSERV)
 
     def test_domain1(self):
-        self._test('getnameinfo', ('gevent.org', 80), 0)
+        self._test('getnameinfo', (gevent_org, 80), 0)
 
     def test_domain2(self):
-        self._test('getnameinfo', ('www.gevent.org', 80), 0)
+        self._test('getnameinfo', (www_gevent_org, 80), 0)
 
     def test_port_zero(self):
-        self._test('getnameinfo', ('www.gevent.org', 0), 0)
+        self._test('getnameinfo', (www_gevent_org, 0), 0)
 
 
 class Test_getnameinfo_fail(TestCase):
 
     def test_port_string(self):
-        self._test('getnameinfo', ('www.gevent.org', 'http'), 0)
+        self._test('getnameinfo', (www_gevent_org, 'http'), 0)
 
     def test_bad_flags(self):
         self._test('getnameinfo', ('127.0.0.1', 80), 55555555)
@@ -455,16 +467,16 @@ class Test_getnameinfo_fail(TestCase):
 class TestInvalidPort(TestCase):
 
     def test1(self):
-        self._test('getnameinfo', ('www.gevent.org', -1), 0)
+        self._test('getnameinfo', (www_gevent_org, -1), 0)
 
     def test2(self):
-        self._test('getnameinfo', ('www.gevent.org', None), 0)
+        self._test('getnameinfo', (www_gevent_org, None), 0)
 
     def test3(self):
-        self._test('getnameinfo', ('www.gevent.org', 'x'), 0)
+        self._test('getnameinfo', (www_gevent_org, 'x'), 0)
 
     def test4(self):
-        self._test('getnameinfo', ('www.gevent.org', 65536), 0)
+        self._test('getnameinfo', (www_gevent_org, 65536), 0)
 
 
 if __name__ == '__main__':

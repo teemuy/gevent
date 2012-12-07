@@ -53,10 +53,16 @@ class Resolver(object):
         return self.gethostbyname_ex(hostname, family)[-1][0]
 
     def gethostbyname_ex(self, hostname, family=AF_INET):
-        if isinstance(hostname, text_type):
-            hostname = hostname.encode('ascii')
-        elif not isinstance(hostname, str):
-            raise TypeError('Expected string, not %s' % type(hostname).__name__)
+        if PY3:
+            if isinstance(hostname, str):
+                hostname = hostname.encode('idna')
+            elif not isinstance(hostname, (bytes, bytearray)):
+                raise TypeError('Expected es(idna), not %s' % type(hostname).__name__)
+        else:
+            if isinstance(hostname, text_type):
+                hostname = hostname.encode('ascii')
+            elif not isinstance(hostname, str):
+                raise TypeError('Expected string, not %s' % type(hostname).__name__)
 
         while True:
             ares = self.ares
@@ -193,10 +199,16 @@ class Resolver(object):
                     raise
 
     def _gethostbyaddr(self, ip_address):
-        if isinstance(ip_address, text_type):
-            ip_address = ip_address.encode('ascii')
-        elif not isinstance(ip_address, str):
-            raise TypeError('Expected string, not %s' % type(ip_address).__name__)
+        if PY3:
+            if isinstance(ip_address, str):
+                ip_address = ip_address.encode('idna')
+            elif not isinstance(ip_address, (bytes, bytearray)):
+                raise TypeError('Expected es(idna), not %s' % type(ip_address).__name__)
+        else:
+            if isinstance(ip_address, text_type):
+                ip_address = ip_address.encode('ascii')
+            elif not isinstance(ip_address, str):
+                raise TypeError('Expected string, not %s' % type(ip_address).__name__)
 
         waiter = Waiter(self.hub)
         try:
@@ -216,8 +228,6 @@ class Resolver(object):
             return waiter.get()
 
     def gethostbyaddr(self, ip_address):
-        if PY3 and isinstance(ip_address, binary_type):
-            ip_address = ip_address.decode('ascii')
         ip_address = _resolve_special(ip_address, AF_UNSPEC)
         while True:
             ares = self.ares
@@ -234,10 +244,10 @@ class Resolver(object):
             raise TypeError('getnameinfo() argument 1 must be a tuple')
 
         address = sockaddr[0]
-        if isinstance(address, text_type):
+        if not PY3 and isinstance(address, text_type):
             address = address.encode('ascii')
 
-        if not isinstance(address, str):
+        if not isinstance(address, string_types):
             raise TypeError('sockaddr[0] must be a string, not %s' % type(address).__name__)
 
         port = sockaddr[1]
