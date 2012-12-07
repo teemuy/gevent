@@ -5,7 +5,9 @@ from gevent.server import StreamServer
 import errno
 import sys
 import os
-from six import b, string_types
+from six import b, string_types, PY3
+if not PY3:
+    ConnectionResetError = socket.error
 
 
 class SimpleStreamServer(StreamServer):
