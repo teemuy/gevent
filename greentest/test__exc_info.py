@@ -47,6 +47,8 @@ class Test(greentest.TestCase):
             except Exception:
                 ex = sys.exc_info()[1]
                 assert ex is error, (ex, error)
+            finally:
+                _to_reraise = None
 
     def test2(self):
         timer = gevent.get_hub().loop.timer(0)
