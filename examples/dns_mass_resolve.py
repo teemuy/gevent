@@ -13,7 +13,10 @@ from __future__ import with_statement
 import sys
 import gevent
 from gevent import socket
+from gevent.hub import PY3
 from gevent.pool import Pool
+if PY3:
+    xrange = range
 
 N = 1000
 # limit ourselves to max 10 simultaneous outstanding requests
