@@ -23,7 +23,7 @@ import sys
 import errno
 from gevent.socket import socket, _fileobject, timeout_default
 from gevent.socket import error as socket_error
-from gevent.hub import integer_types, text_type, binary_type, PY3
+from gevent.hub import integer_types, text_type, binary_type, PY3, b
 
 
 __implements__ = ['SSLSocket',
@@ -67,7 +67,7 @@ class SSLSocket(socket):
                  ssl_version=PROTOCOL_SSLv23, ca_certs=None,
                  do_handshake_on_connect=True,
                  suppress_ragged_eofs=True,
-                 ciphers=None):
+                 ciphers=None, server_hostname=None, _context=None):
         socket.__init__(self, _sock=sock)
 
         if certfile and not keyfile:
@@ -83,15 +83,46 @@ class SSLSocket(socket):
             self._sslobj = None
         else:
             # yes, create the SSL object
-            if ciphers is None:
-                self._sslobj = _ssl.sslwrap(self._sock, server_side,
-                                            keyfile, certfile,
-                                            cert_reqs, ssl_version, ca_certs)
+            if PY3:
+                self._sslobj = None
+                if _context:
+                    self.context = _context
+                else:
+                    if server_side and not certfile:
+                        raise ValueError("certfile must be specified for "
+                                         "server-side operations")
+                    if keyfile and not certfile:
+                        raise ValueError("certfile must be specified")
+                    if certfile and not keyfile:
+                        keyfile = certfile
+                    self.context = __ssl__._SSLContext(ssl_version)
+                    self.context.verify_mode = cert_reqs
+                    if ca_certs:
+                        self.context.load_verify_locations(ca_certs)
+                    if certfile:
+                        self.context.load_cert_chain(certfile, keyfile)
+                    if ciphers:
+                        self.context.set_ciphers(ciphers)
+                if server_side and server_hostname:
+                    raise ValueError("server_hostname can only be specified "
+                                     "in client mode")
+                self.server_hostname = server_hostname
+                try:
+                    self._sslobj = self.context._wrap_socket(
+                        self._sock, server_side, server_hostname)
+                except socket_error as e:
+                    self.close()
+                    raise e
             else:
-                self._sslobj = _ssl.sslwrap(self._sock, server_side,
-                                            keyfile, certfile,
-                                            cert_reqs, ssl_version, ca_certs,
-                                            ciphers)
+                if ciphers is None:
+                    self._sslobj = _ssl.sslwrap(self._sock, server_side,
+                                                keyfile, certfile,
+                                                cert_reqs, ssl_version, ca_certs)
+                else:
+                    self._sslobj = _ssl.sslwrap(self._sock, server_side,
+                                                keyfile, certfile,
+                                                cert_reqs, ssl_version, ca_certs,
+                                                ciphers)
             if do_handshake_on_connect:
                 self.do_handshake()
         self.keyfile = keyfile
@@ -113,7 +144,7 @@ class SSLSocket(socket):
             except SSLError:
                 ex = sys.exc_info()[1]
                 if ex.args[0] == SSL_ERROR_EOF and self.suppress_ragged_eofs:
-                    return ''
+                    return b('')
                 elif ex.args[0] == SSL_ERROR_WANT_READ:
                     if self.timeout == 0.0:
                         raise
@@ -372,14 +403,18 @@ class SSLSocket(socket):
         if self._sslobj:
             raise ValueError("attempt to connect already-connected SSLSocket!")
         socket.connect(self, addr)
-        if self.ciphers is None:
-            self._sslobj = _ssl.sslwrap(self._sock, False, self.keyfile, self.certfile,
-                                        self.cert_reqs, self.ssl_version,
-                                        self.ca_certs)
+        if PY3:
+            self._sslobj = self.context._wrap_socket(self._sock, False,
+                                                     self.server_hostname)
         else:
-            self._sslobj = _ssl.sslwrap(self._sock, False, self.keyfile, self.certfile,
-                                        self.cert_reqs, self.ssl_version,
-                                        self.ca_certs, self.ciphers)
+            if self.ciphers is None:
+                self._sslobj = _ssl.sslwrap(self._sock, False, self.keyfile, self.certfile,
+                                            self.cert_reqs, self.ssl_version,
+                                            self.ca_certs)
+            else:
+                self._sslobj = _ssl.sslwrap(self._sock, False, self.keyfile, self.certfile,
+                                            self.cert_reqs, self.ssl_version,
+                                            self.ca_certs, self.ciphers)
         if self.do_handshake_on_connect:
             self.do_handshake()
 
@@ -400,7 +435,7 @@ class SSLSocket(socket):
                           ciphers=self.ciphers),
                 addr)
 
-    def makefile(self, mode='r', bufsize=-1):
+    def makefile(self, mode='rwb', bufsize=-1):
         """Make and return a file-like object that
         works with the SSL connection.  Just use the code
         from the socket module."""

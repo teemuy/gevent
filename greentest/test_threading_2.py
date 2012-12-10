@@ -22,8 +22,12 @@ if not hasattr(threading.Thread, 'is_alive'):
     threading.Thread.is_alive = threading.Thread.isAlive
 if not hasattr(threading.Thread, 'daemon'):
     threading.Thread.daemon = property(threading.Thread.isDaemon, threading.Thread.setDaemon)
-if not hasattr(threading._Condition, 'notify_all'):
-    threading._Condition.notify_all = threading._Condition.notifyAll
+try:
+    if not hasattr(threading.Condition, 'notify_all'):
+        threading.Condition.notify_all = threading.Condition.notifyAll
+except AttributeError:
+    if not hasattr(threading._Condition, 'notify_all'):
+        threading._Condition.notify_all = threading._Condition.notifyAll
 '''
 
 six.exec_(setup_)
@@ -33,8 +37,8 @@ setup_4 = '\n'.join('                %s' % line for line in setup_.split('\n'))
 setup_5 = '\n'.join('                    %s' % line for line in setup_.split('\n'))
 
 
-import test.test_support
-from test.test_support import verbose
+import test_support
+from test_support import verbose
 import random
 import re
 import sys
@@ -298,7 +302,11 @@ class ThreadTests(unittest.TestCase):
             import subprocess
             rc = subprocess.call([sys.executable, "-c", """if 1:
 %s
-                import ctypes, sys, time, thread
+                import ctypes, sys, time
+                try:
+                    import thread
+                except ImportError:
+                    import _thread as thread
 
                 # This lock is used as a simple event variable.
                 ready = thread.allocate_lock()
@@ -347,6 +355,9 @@ class ThreadTests(unittest.TestCase):
                 stderr=subprocess.PIPE)
             stdout, stderr = p.communicate()
             stdout = stdout.strip()
+            if six.PY3:
+                stdout = stdout.decode()
+                stderr = stderr.decode()
             assert re.match('^Woke up, sleep function is: <.*?sleep.*?>$', stdout), repr(stdout)
             stderr = re.sub(r"^\[\d+ refs\]", "", stderr, re.MULTILINE).strip()
             self.assertEqual(stderr, "")
@@ -419,8 +430,8 @@ class ThreadJoinOnShutdown(unittest.TestCase):
         import subprocess
         p = subprocess.Popen([sys.executable, "-c", script], stdout=subprocess.PIPE)
         rc = p.wait()
-        data = p.stdout.read().replace('\r', '')
-        self.assertEqual(data, "end of main\nend of thread\n")
+        data = p.stdout.read().replace(six.b('\r'), six.b(''))
+        self.assertEqual(data, six.b("end of main\nend of thread\n"))
         self.failIf(rc == 2, "interpreter was blocked")
         self.failUnless(rc == 0, "Unexpected error")
 
@@ -539,7 +550,7 @@ class BoundedSemaphoreTests(lock_tests.BoundedSemaphoreTests):
 
 
 def main():
-    test.test_support.run_unittest(LockTests, RLockTests, EventTests,
+    test_support.run_unittest(LockTests, RLockTests, EventTests,
                                    ConditionAsRLockTests, ConditionTests,
                                    SemaphoreTests, BoundedSemaphoreTests,
                                    ThreadTests,

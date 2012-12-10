@@ -81,5 +81,5 @@ class ThreadTrace(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    import test.test_support
-    test.test_support.run_unittest(ThreadTrace)
+    import test_support
+    test_support.run_unittest(ThreadTrace)

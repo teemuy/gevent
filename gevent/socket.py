@@ -112,12 +112,13 @@ except ImportError:
     EBADF = 9
 
 import _socket
-_realsocket = _socket.socket
 import socket as __socket__
-try:
-    _fileobject = __socket__._fileobject
-except AttributeError:
+if PY3:
     from socket import socket as __socket__socket__
+
+    # for ssl.py to create weakref
+    class _realsocket(_socket.socket):
+        pass
 
     class _fileobject:
         def __init__(self, sock, mode='rwb', bufsize=-1, close=False):
@@ -153,6 +154,9 @@ except AttributeError:
     return getattr(self._obj, '%s')(*args, **kwargs)
 ''' % (_name, _name))
         del _name
+else:
+    _fileobject = __socket__._fileobject
+    _realsocket = _socket.socket
 
 
 for name in __imports__[:]:
