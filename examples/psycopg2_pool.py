@@ -5,7 +5,10 @@ import contextlib
 import gevent
 from gevent.queue import Queue
 from gevent.socket import wait_read, wait_write
+from gevent.hub import integer_types, PY3
 from psycopg2 import extensions, OperationalError, connect
+if PY3:
+    xrange = range
 
 
 def gevent_wait_callback(conn, timeout=None):
@@ -29,7 +32,7 @@ extensions.set_wait_callback(gevent_wait_callback)
 class DatabaseConnectionPool(object):
 
     def __init__(self, maxsize=100):
-        if not isinstance(maxsize, (int, long)):
+        if not isinstance(maxsize, integer_types):
             raise TypeError('Expected integer, got %r' % (maxsize, ))
         self.maxsize = maxsize
         self.pool = Queue()
@@ -169,4 +172,4 @@ if __name__ == '__main__':
         gevent.spawn(pool.execute, 'select pg_sleep(1);')
     gevent.wait()
     delay = time.time() - start
-    print 'Running "select pg_sleep(1);" 4 times with 3 connections. Should take about 2 seconds: %.2fs' % delay
+    print('Running "select pg_sleep(1);" 4 times with 3 connections. Should take about 2 seconds: %.2fs' % delay)

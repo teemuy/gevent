@@ -3,6 +3,7 @@ python:
   - "2.5"
   - "2.6"
   - "2.7"
+  - "3.3"
 env:
   - EXTRA=1
   - GEVENT_FILE=thread
@@ -29,7 +30,7 @@ matrix:
    - python: 2.5
      env: DEBUGPY=-dbg GEVENTSETUP_EV_VERIFY=3
 install:
- - deactivate
+ - if [ "`type -t deactivate`" = 'function' ]; then deactivate; fi
  - export VER=$TRAVIS_PYTHON_VERSION$DEBUGPY
  - export PYTHON=/usr/bin/python$VER
  - sudo -E ./travis_install_deps.sh
