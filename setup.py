@@ -84,13 +84,18 @@ ARES = Extension(name='gevent.ares',
                  depends=expand('gevent/dnshelper.c', 'gevent/cares_*.*'))
 ARES.optional = True
 
+PYPY = '__pypy__' in sys.builtin_module_names
 
-ext_modules = [CORE,
-               ARES,
-               Extension(name="gevent._semaphore",
-                         sources=["gevent/gevent._semaphore.c"]),
-               Extension(name="gevent._util",
-                         sources=["gevent/gevent._util.c"])]
+if PYPY:
+    # CPython API is not suitable for PyPy, an alternative core is needed.
+    ext_modules = []
+else:
+    ext_modules = [CORE,
+                   ARES,
+                   Extension(name="gevent._semaphore",
+                             sources=["gevent/gevent._semaphore.c"]),
+                   Extension(name="gevent._util",
+                             sources=["gevent/gevent._util.c"])]
 
 
 def make_universal_header(filename, *defines):
@@ -286,6 +291,12 @@ def read(name, *args):
 
 
 def run_setup(ext_modules):
+    if PYPY:
+        # Greenlet is already contained in the distribution
+        install_requires = []
+    else:
+        install_requires = ['greenlet']
+    
     setup(
         name='gevent',
         version=__version__,
@@ -297,7 +308,7 @@ def run_setup(ext_modules):
         packages=['gevent'],
         ext_modules=ext_modules,
         cmdclass=dict(build_ext=my_build_ext, sdist=sdist),
-        install_requires=['greenlet'],
+        install_requires=install_requires,
         classifiers=[
             "License :: OSI Approved :: MIT License",
             "Programming Language :: Python :: 2.5",
