@@ -17,7 +17,7 @@ gevent/gevent.ares.c: gevent/ares.pyx gevent/*.pxd
 	mv gevent.ares.* gevent/
 
 gevent/gevent._semaphore.c: gevent/_semaphore.py
-	$(CYTHON) -o gevent._semaphore.c gevent/_semaphore.pyx
+	$(CYTHON) -o gevent._semaphore.c gevent/_semaphore.py
 	mv gevent._semaphore.* gevent/
 
 gevent/gevent._util.c: gevent/_util.pyx
