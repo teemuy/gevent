@@ -333,3 +333,5 @@ if __name__ == '__main__':
         run_setup(ext_modules)
     if ARES not in ext_modules:
         sys.stderr.write('\nWARNING: The gevent.ares extension has been disabled.\n')
+    if CORE not in ext_modules:
+        sys.stderr.write('\nWARNING: The gevent.core has been disabled, an external core will be needed.\n')
