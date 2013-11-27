@@ -5,10 +5,8 @@ import contextlib
 import gevent
 from gevent.queue import Queue
 from gevent.socket import wait_read, wait_write
-from gevent.hub import integer_types, PY3
+from gevent.hub import integer_types
 from psycopg2 import extensions, OperationalError, connect
-if PY3:
-    xrange = range
 
 
 def gevent_wait_callback(conn, timeout=None):
@@ -92,30 +90,8 @@ class DatabaseConnectionPool(object):
     @contextlib.contextmanager
     def cursor(self, *args, **kwargs):
         isolation_level = kwargs.pop('isolation_level', None)
-        conn = self.get()
-        try:
-            if isolation_level is not None:
-                if conn.isolation_level == isolation_level:
-                    isolation_level = None
-                else:
-                    conn.set_isolation_level(isolation_level)
+        with self.connection(isolation_level) as conn:
             yield conn.cursor(*args, **kwargs)
-        except:
-            if conn.closed:
-                conn = None
-                self.closeall()
-            else:
-                conn = self._rollback(conn)
-            raise
-        else:
-            if conn.closed:
-                raise OperationalError("Cannot commit because connection was closed: %r" % (conn, ))
-            conn.commit()
-        finally:
-            if conn is not None and not conn.closed:
-                if isolation_level is not None:
-                    conn.set_isolation_level(isolation_level)
-                self.put(conn)
 
     def _rollback(self, conn):
         try:
@@ -168,7 +144,7 @@ if __name__ == '__main__':
     import time
     pool = PostgresConnectionPool("dbname=postgres", maxsize=3)
     start = time.time()
-    for _ in xrange(4):
+    for _ in range(4):
         gevent.spawn(pool.execute, 'select pg_sleep(1);')
     gevent.wait()
     delay = time.time() - start

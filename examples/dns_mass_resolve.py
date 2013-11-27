@@ -13,10 +13,7 @@ from __future__ import with_statement
 import sys
 import gevent
 from gevent import socket
-from gevent.hub import PY3
 from gevent.pool import Pool
-if PY3:
-    xrange = range
 
 N = 1000
 # limit ourselves to max 10 simultaneous outstanding requests
@@ -37,7 +34,7 @@ def job(url):
         finished += 1
 
 with gevent.Timeout(2, False):
-    for x in xrange(10, 10 + N):
+    for x in range(10, 10 + N):
         pool.spawn(job, '%s.com' % x)
     pool.join()
 
