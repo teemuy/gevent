@@ -328,7 +328,6 @@ class ThreadTests(unittest.TestCase):
             import subprocess
             p = subprocess.Popen([sys.executable, "-c", """if 1:
 %s
-                    from __future__ import print_function
                     import threading
                     from time import sleep
 
@@ -336,7 +335,7 @@ class ThreadTests(unittest.TestCase):
                         sleep(1)
                         # As a non-daemon thread we SHOULD wake up and nothing
                         # should be torn down yet
-                        print("Woke up, sleep function is:", sleep)
+                        print("Woke up, sleep function is: %r" % sleep)
 
                     threading.Thread(target=child).start()
                     raise SystemExit
