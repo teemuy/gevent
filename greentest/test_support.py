@@ -1,5 +1,6 @@
 """Supporting definitions for the Python regression tests."""
 
+import six
 import sys
 
 HOST = 'localhost'
@@ -175,8 +176,9 @@ def bind_port(sock, host='', preferred_port=54321):
         except socket.error:
             if sys.exc_info()[1].args[0] != errno.EADDRINUSE:
                 raise
-            print >>sys.__stderr__, \
-                '  WARNING: failed to listen on port %d, trying another' % port
+            six.print_(
+                '  WARNING: failed to listen on port %d, trying another' % port,
+                file=sys.__stderr__)
     raise TestFailed('unable to find port to listen on')
 
 FUZZ = 1e-6
@@ -335,7 +337,7 @@ def open_urlresource(url):
             return open(fn)
 
     requires('urlfetch')
-    print >> get_original_stdout(), '\tfetching %s ...' % url
+    six.print_('\tfetching %s ...' % url, file=get_original_stdout())
     fn, _ = urllib.urlretrieve(url, filename)
     return open(fn)
 
