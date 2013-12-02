@@ -328,6 +328,7 @@ class ThreadTests(unittest.TestCase):
             import subprocess
             p = subprocess.Popen([sys.executable, "-c", """if 1:
 %s
+                    from __future__ import print_function
                     import threading
                     from time import sleep
 
