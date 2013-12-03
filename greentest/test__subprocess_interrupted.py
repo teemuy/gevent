@@ -1,3 +1,4 @@
+import six
 import sys
 if six.PY3:
     xrange = range
