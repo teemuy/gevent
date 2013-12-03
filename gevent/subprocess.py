@@ -6,7 +6,7 @@ import gc
 import signal
 import traceback
 from gevent.event import AsyncResult
-from gevent.hub import get_hub, linkproxy, sleep, getcurrent, string_types, integer_types
+from gevent.hub import get_hub, linkproxy, sleep, getcurrent, string_types, integer_types, xrange
 from gevent.fileobject import FileObject
 from gevent.greenlet import Greenlet, joinall
 spawn = Greenlet.spawn
@@ -306,10 +306,6 @@ class Popen(object):
 
     def poll(self):
         return self._internal_poll()
-
-    def rawlink(self, callback):
-        self.result.rawlink(linkproxy(callback, self))
-    # XXX unlink
 
     if mswindows:
         #
@@ -792,6 +788,10 @@ class Popen(object):
             """Kill the process with SIGKILL
             """
             self.send_signal(signal.SIGKILL)
+
+        def rawlink(self, callback):
+            self.result.rawlink(linkproxy(callback, self))
+        # XXX unlink
 
 
 def write_and_close(fobj, data):

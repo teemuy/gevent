@@ -1,4 +1,6 @@
 import sys
+if six.PY3:
+    xrange = range
 
 
 if 'runtestcase' in sys.argv[1:]:
