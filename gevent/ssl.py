@@ -148,7 +148,7 @@ class _BaseSSLSocket(socket):
     # is it possible for sendall() to send some data without encryption if another end shut down SSL?
     def sendall(self, data, flags=0):
         self._checkClosed()
-        return super().sendall(data, flags)
+        return socket.sendall(self, data, flags)
 
     def sendto(self, *args):
         self._checkClosed()
