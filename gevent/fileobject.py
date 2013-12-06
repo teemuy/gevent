@@ -128,7 +128,6 @@ else:
                 self._closed = False
                 self._close = close
 
-
                 self.fileio = GreenFileIO(fileno, mode, closefd=close)
 
                 if bufsize < 0:
