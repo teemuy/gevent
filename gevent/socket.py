@@ -473,7 +473,7 @@ if PY3:
                 self._sock.__init__(family, type, proto, fileno)
             else:
                 self._sock.__init__(_sock.family, _sock.type, _sock.proto,
-                                    _sock.fileno)
+                                    _sock.fileno())
             self._timeout = self._sock.gettimeout()
             super().__init__()
 
