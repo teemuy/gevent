@@ -283,20 +283,6 @@ class _BaseSocket(object):
             if timeout is not None:
                 timeout.cancel()
 
-    def accept(self):
-        sock = self._sock
-        while True:
-            try:
-                client_socket, address = sock.accept()
-                break
-            except error as ex:
-                if ex[0] != EWOULDBLOCK or self.timeout == 0.0:
-                    raise
-                if not PY3:
-                    sys.exc_clear()
-            self._wait(self._read_event)
-        return self.__class__(_sock=client_socket), address
-
     def close(self, _closedsocket=_closedsocket, cancel_wait_ex=cancel_wait_ex):
         # This function should not reference any globals. See Python issue #808164.
         self.hub.cancel_wait(self._read_event, cancel_wait_ex)
@@ -499,6 +485,18 @@ if PY3:
             return '<%s%s>' % (self._sock.__str__()[1:-1],
                                ', '.join(self._formatinfo()))
 
+        def accept(self):
+            sock = self._sock
+            while True:
+                try:
+                    client_socket, address = sock.accept()
+                    break
+                except error as ex:
+                    if ex[0] != EWOULDBLOCK or self.timeout == 0.0:
+                        raise
+                self._wait(self._read_event)
+            return socket(_sock=client_socket), address
+
         @property
         def timeout(self):
             return self._timeout
@@ -593,6 +591,19 @@ else:
             result = ['fileno=%s' % fileno]
             result.extend(super(socket, self)._formatinfo())
             return result
+
+        def accept(self):
+            sock = self._sock
+            while True:
+                try:
+                    client_socket, address = sock.accept()
+                    break
+                except error as ex:
+                    if ex[0] != EWOULDBLOCK or self.timeout == 0.0:
+                        raise
+                    sys.exc_clear()
+                self._wait(self._read_event)
+            return socket(_sock=client_socket), address
 
         def dup(self):
             """dup() -> socket object
