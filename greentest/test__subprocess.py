@@ -6,6 +6,9 @@ import greentest
 import gevent
 from gevent import subprocess
 import time
+import six
+if six.PY3:
+    from io import TextIOBase as file
 
 
 if subprocess.mswindows:
@@ -50,12 +53,12 @@ class Test(greentest.TestCase):
                              stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
-        (stdout, stderr) = p.communicate("banana")
-        self.assertEqual(stdout, "banana")
+        (stdout, stderr) = p.communicate(b"banana")
+        self.assertEqual(stdout, b"banana")
         if sys.executable.endswith('-dbg'):
-            assert stderr.startswith('pineapple')
+            assert stderr.startswith(b'pineapple')
         else:
-            self.assertEqual(stderr, "pineapple")
+            self.assertEqual(stderr, b"pineapple")
 
     def test_universal1(self):
         p = subprocess.Popen([sys.executable, "-c",
@@ -82,7 +85,7 @@ class Test(greentest.TestCase):
             else:
                 # Interpreter without universal newline support
                 self.assertEqual(stdout,
-                                 "line1\nline2\rline3\r\nline4\r\nline5\nline6")
+                                 b"line1\nline2\rline3\r\nline4\r\nline5\nline6")
         finally:
             p.stdout.close()
 
@@ -109,7 +112,7 @@ class Test(greentest.TestCase):
             else:
                 # Interpreter without universal newline support
                 self.assertEqual(stdout,
-                                 "line1\nline2\rline3\r\nline4\r\nline5\nline6")
+                                 b"line1\nline2\rline3\r\nline4\r\nline5\nline6")
         finally:
             p.stdout.close()
 
