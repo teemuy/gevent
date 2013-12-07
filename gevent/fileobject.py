@@ -47,58 +47,74 @@ else:
         from io import BufferedRandom
         from io import BufferedReader
         from io import BufferedWriter
-        from io import FileIO
+        from io import RawIOBase
         from io import TextIOWrapper
+        from io import UnsupportedOperation
 
-        class GreenFileIO(FileIO):
-            def __init__(self, name, mode='r', closefd=True):
-                super().__init__(name, mode, closefd)
-                fileno = self.fileno()
+        class GreenFileDescriptorIO(RawIOBase):
+            def __init__(self, fileno, mode='r', closefd=True):
+                super().__init__()
+                self._closed = False
+                self._closefd = closefd
+                self._fileno = fileno
                 make_nonblocking(fileno)
+                self._readable = 'r' in mode
+                self._writable = 'w' in mode
                 self.hub = get_hub()
                 io = self.hub.loop.io
-                self._read_event = io(fileno, 1)
-                self._write_event = io(fileno, 2)
+                if self._readable:
+                    self._read_event = io(fileno, 1)
+                else:
+                    self._read_event = None
+                if self._writable:
+                    self._write_event = io(fileno, 2)
+                else:
+                    self._write_event = None
+
+            def readable(self):
+                return self._readable
+
+            def writable(self):
+                return self._writable
+
+            def fileno(self):
+                return self._fileno
+
+            @property
+            def closed(self):
+                return self._closed
+
+            def close(self):
+                if self._closed:
+                    return
+                self.flush()
+                self._closed = True
+                if self._readable:
+                    self.hub.cancel_wait(self._read_event, cancel_wait_ex)
+                if self._writable:
+                    self.hub.cancel_wait(self._write_event, cancel_wait_ex)
+                fileno = self._fileno
+                if self._closefd:
+                    self._fileno = None
+                    os.close(fileno)
 
             def read(self, n=1):
+                if not self._readable:
+                    raise UnsupportedOperation('readinto')
                 while True:
                     try:
-                        ret = super().read(n)
-                        if ret is not None:
-                            return ret
-                    except (IOError, OSError) as ex:
-                        if ex.args[0] not in ignored_errors:
-                            raise
-                    self.hub.wait(self._read_event)
-
-            def readall(self):
-                while True:
-                    try:
-                        ret = super().readall()
-                        if ret is not None:
-                            return ret
-                    except (IOError, OSError) as ex:
-                        if ex.args[0] not in ignored_errors:
-                            raise
-                    self.hub.wait(self._read_event)
-
-            def readinto(self, b):
-                while True:
-                    try:
-                        ret = super().readinto(b)
-                        if ret is not None:
-                            return ret
+                        return _read(self._fileno, n)
                     except (IOError, OSError) as ex:
                         if ex.args[0] not in ignored_errors:
                             raise
                     self.hub.wait(self._read_event)
 
             def write(self, b):
+                if not self._writable:
+                    raise UnsupportedOperation('write')
                 while True:
                     try:
-                        ret = super().write(b)
-                        if ret is not None:
-                            return ret
+                        return _write(self._fileno, b)
                     except (IOError, OSError) as ex:
                         if ex.args[0] not in ignored_errors:
                             raise
@@ -128,7 +144,7 @@ else:
                 self._closed = False
                 self._close = close
 
-                self.fileio = GreenFileIO(fileno, mode, closefd=close)
+                self.fileio = GreenFileDescriptorIO(fileno, mode, closefd=close)
 
                 if bufsize < 0:
                     bufsize = self.default_bufsize
@@ -157,9 +173,9 @@ else:
                     return
                 self._closed = True
                 try:
-                    self.flush()
-                finally:
                     self.io.close()
+                    self.fileio.close()
+                finally:
                     self._fobj = None
 
             def flush(self):
