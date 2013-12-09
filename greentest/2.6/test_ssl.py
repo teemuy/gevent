@@ -1,5 +1,4 @@
 # Test the support for SSL and sockets
-from __future__ import print_function
 
 import sys
 import unittest
@@ -78,7 +77,7 @@ class BasicTests(unittest.TestCase):
         except TypeError:
             pass
         else:
-            print("didn't raise TypeError")
+            print "didn't raise TypeError"
         ssl.RAND_add("this is a random string", 75.0)
 
     def test_parse_cert(self):
@@ -147,7 +146,7 @@ class NetworkedTests(unittest.TestCase):
         # file descriptor, hence skipping the test under Windows).
         if os.name == "nt":
             if test_support.verbose:
-                print("Skipped: can't use a socket as a file under Windows")
+                print "Skipped: can't use a socket as a file under Windows"
             return
         ss = ssl.wrap_socket(socket.socket(socket.AF_INET))
         ss.connect(("svn.python.org", 443))

@@ -1,5 +1,4 @@
 # Test the support for SSL and sockets
-from __future__ import print_function
 
 import sys
 import unittest
@@ -101,7 +100,7 @@ class BasicSocketTests(unittest.TestCase):
         except TypeError:
             pass
         else:
-            print("didn't raise TypeError")
+            print "didn't raise TypeError"
         ssl.RAND_add("this is a random string", 75.0)
 
     def test_parse_cert(self):
