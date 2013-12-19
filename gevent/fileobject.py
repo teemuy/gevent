@@ -47,6 +47,8 @@ else:
         from io import BufferedRandom
         from io import BufferedReader
         from io import BufferedWriter
+        from io import BytesIO
+        from io import DEFAULT_BUFFER_SIZE
         from io import RawIOBase
         from io import TextIOWrapper
         from io import UnsupportedOperation
@@ -108,6 +110,15 @@ else:
                         if ex.args[0] not in ignored_errors:
                             raise
                     self.hub.wait(self._read_event)
+
+            def readall(self):
+                ret = BytesIO()
+                while True:
+                    data = self.read(DEFAULT_BUFFER_SIZE)
+                    if not data:
+                        break
+                    ret.write(data)
+                return ret.getvalue()
 
             def write(self, b):
                 if not self._writable:
