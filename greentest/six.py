@@ -11,7 +11,6 @@ else:
 if PY3:
     import builtins
     exec_ = getattr(builtins, "exec")
-    del builtins
     xrange = range
     string_types = str,
     text_type = str
@@ -29,6 +28,7 @@ else:
             locs = globs
         exec("""exec code in globs, locs""")
 
-    xrange = xrange
-    string_types = basestring,
-    text_type = unicode
+    import __builtin__ as builtins
+    xrange = builtins.xrange
+    string_types = builtins.basestring,
+    text_type = builtins.unicode

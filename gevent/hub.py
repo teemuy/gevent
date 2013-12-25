@@ -46,10 +46,11 @@ if PY3:
 
     del builtins
 else:
-    string_types = basestring,
-    integer_types = (int, long)
-    text_type = unicode
-    xrange = xrange
+    import __builtin__
+    string_types = __builtin__.basestring,
+    integer_types = (int, __builtin__.long)
+    text_type = __builtin__.unicode
+    xrange = __builtin__.xrange
 
     def exec_(_code_, _globs_=None, _locs_=None):
         """Execute code in a namespace."""
